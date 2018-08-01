@@ -7,6 +7,7 @@ from ethereum import utils
 from z3 import BitVec, Extract, UDiv, simplify, Concat, ULT, UGT, BitVecNumRef, Not, \
     is_false, is_expr, ExprRef
 from z3 import BitVecVal, If, BoolRef
+from z3.z3types import Z3Exception
 
 import mythril.laser.ethereum.util as helper
 from mythril.laser.ethereum import util
@@ -773,7 +774,7 @@ class Instruction:
                 new_state = copy(global_state)
                 new_state.mstate.pc = index
                 new_state.mstate.depth += 1
-                new_state.mstate.constraints.append(simplify(condi))
+                new_state.mstate.constraints.append(condi if type(condi) == bool else simplify(condi))
 
                 states.append(new_state)
             else:
@@ -785,7 +786,7 @@ class Instruction:
         if (type(negated) == bool and negated) or (type(negated) == BoolRef and not is_false(simplify(negated))):
             new_state = copy(global_state)
             new_state.mstate.depth += 1
-            new_state.mstate.constraints.append(simplify(negated))
+            new_state.mstate.constraints.append(negated if type(negated) == bool else simplify(negated))
             states.append(new_state)
         else:
             logging.debug("Pruned unreachable states.")
