@@ -35,6 +35,11 @@ class Op:
 
 class Call(Op):
 
+    def __str__(self):
+        return "call(" + str(self.to) + ", " + str(self.gas) + ", " + str(self.data) + ")"
+
+    __repr__ = __str__
+
     def __init__(self, node, state, state_index, _type, to, gas, value=Variable(0, VarType.CONCRETE), data=None):
 
         super().__init__(node, state, state_index)
@@ -46,6 +51,11 @@ class Call(Op):
 
 
 class SStore(Op):
+
+    def __str__(self):
+        return "SStore(" + str(self.value) + ")"
+
+    __repr__ = __str__
 
     def __init__(self, node, state, state_index, value):
         super().__init__(node, state, state_index)
