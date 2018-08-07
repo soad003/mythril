@@ -180,7 +180,7 @@ class Mythril(object):
         config.set('defaults', 'dynamic_loading', 'infura')
 
     def analyze_truffle_project(self, *args, **kwargs):
-        return analyze_truffle_project(*args, **kwargs)  # just passthru for now
+        return analyze_truffle_project(self.sigs, *args, **kwargs)  # just passthru by passing signatures for now
 
     def _init_solc_binary(self, version):
         # Figure out solc binary and version
@@ -272,9 +272,9 @@ class Mythril(object):
 
     def search_db(self, search):
 
-        def search_callback(code_hash, code, addresses, balances):
-            for i in range(0, len(addresses)):
-                print("Address: " + addresses[i] + ", balance: " + str(balances[i]))
+        def search_callback(contract, address, balance):
+
+            print("Address: " + address + ", balance: " + str(balance))
 
         try:
             self.eth_db.search(search, search_callback)
@@ -363,10 +363,10 @@ class Mythril(object):
 
         return get_serializable_statespace(sym)
 
-    def graph_html(self, strategy, contract, address, max_depth=12, enable_physics=False, phrackify=False):
+    def graph_html(self, strategy, contract, address, max_depth=12, enable_physics=False, phrackify=False, execution_timeout=None):
         sym = SymExecWrapper(contract, address, strategy,
                              dynloader=DynLoader(self.eth) if self.dynld else None,
-                             max_depth=max_depth)
+                             max_depth=max_depth, execution_timeout=execution_timeout)
         return generate_graph(sym, physics=enable_physics, phrackify=phrackify)
 
     def fire_lasers(self, strategy, contracts=None, address=None,
