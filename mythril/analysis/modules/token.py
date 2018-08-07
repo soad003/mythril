@@ -138,7 +138,9 @@ def execute(statespace):
                 val = stack.pop()
 
                 if detect_token_sstore(val, to):
+                    #print()
                     #print(to)
+                    #print()
                     try:
                         logging.debug("[TOKEN] found matching store")
                         model = solver.get_model(node.constraints, timeout = 600)
