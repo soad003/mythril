@@ -26,41 +26,43 @@ class SimpleFileLock(object):
 
     def __init__(self, path):
         self.path = path
-        self.lockfile = pathlib.Path("%s.lck" % path)
-        self.locked = False
+        # self.lockfile = pathlib.Path("%s.lck" % path)
+        # self.locked = False
 
     def aquire(self, timeout=5):
-        if self.locked:
-            raise Exception("SimpleFileLock: lock already aquired")
+        pass
+        # if self.locked:
+        #     raise Exception("SimpleFileLock: lock already aquired")
 
-        t_end = time.time() + timeout
-        while time.time() < t_end:
-            # try to aquire lock
-            try:
-                self.lockfile.touch(mode=0o0000, exist_ok=False)  # touch the lockfile
-                # lockfile does not exist. we have a lock now
-                self.locked = True
-                return
-            except FileExistsError as fee:
-                # check if lockfile date exceeds age and cleanup lock
-                if time.time() > self.lockfile.stat().st_mtime + 60 * 5:
-                    self.release(force=True)  # cleanup old lockfile > 5mins
+        # t_end = time.time() + timeout
+        # while time.time() < t_end:
+        #     # try to aquire lock
+        #     try:
+        #         self.lockfile.touch(mode=0o0000, exist_ok=False)  # touch the lockfile
+        #         # lockfile does not exist. we have a lock now
+        #         self.locked = True
+        #         return
+        #     except FileExistsError as fee:
+        #         # check if lockfile date exceeds age and cleanup lock
+        #         if time.time() > self.lockfile.stat().st_mtime + 60 * 5:
+        #             self.release(force=True)  # cleanup old lockfile > 5mins
 
-                time.sleep(0.5)  # busywait is evil
-                continue
+        #         time.sleep(0.5)  # busywait is evil
+        #         continue
 
-        raise Exception("SimpleFileLock: timeout hit. failed to aquire lock: %s" % (time.time() - self.lockfile.stat().st_mtime))
+        # raise Exception("SimpleFileLock: timeout hit. failed to aquire lock: %s" % (time.time() - self.lockfile.stat().st_mtime))
 
     def release(self, force=False):
-        if not force and not self.locked:
-            raise Exception("SimpleFileLock: aquire lock first")
+        pass
+        # if not force and not self.locked:
+        #     raise Exception("SimpleFileLock: aquire lock first")
 
-        try:
-            self.lockfile.unlink()  # might throw if we force unlock and the file gets removed in the meantime. TOCTOU
-        except FileNotFoundError as fnfe:
-            logging.warning("SimpleFileLock: release(force=%s) on unavailable file. race? %r" % (force, fnfe))
+        # try:
+        #     self.lockfile.unlink()  # might throw if we force unlock and the file gets removed in the meantime. TOCTOU
+        # except FileNotFoundError as fnfe:
+        #     logging.warning("SimpleFileLock: release(force=%s) on unavailable file. race? %r" % (force, fnfe))
 
-        self.locked = False
+        # self.locked = False
 
 
 class SignatureDb(object):
