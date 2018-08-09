@@ -87,8 +87,8 @@ class LaserEVM:
         op_code = instructions[global_state.mstate.pc]['opcode']
 
         # Only count coverage for the main contract
-        if len(global_state.transaction_stack) == 0:
-            self.instructions_covered[global_state.mstate.pc] = True
+        #if len(global_state.transaction_stack) == 0:
+        self.instructions_covered[global_state.mstate.pc] = True
 
         self._execute_pre_hook(op_code, global_state)
         try:

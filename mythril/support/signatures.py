@@ -119,30 +119,31 @@ class SignatureDb(object):
         return self
 
     def write(self, path=None, sync=True):
-        """
-        Write signatures database as json to file
-
-        :param path: specify path otherwise update the file that was loaded with open()
-        :param sync: lock signature file, load contents and merge it into memcached sighash db, then save it
-        :return: self
-        """
-        path = path or self.signatures_file
-        self.signatures_file_lock = self.signatures_file_lock or SimpleFileLock(path)  # lock file to prevent concurrency issues
-        self.signatures_file_lock.aquire()  # try to aquire it within the next 10s
-
-        if sync and os.path.exists(path):
-            # reload and save if file exists
-            with open(path, 'r') as f:
-                sigs = json.load(f)
-
-            sigs.update(self.signatures)  # reload file and merge cached sigs into what we load from file
-            self.signatures = sigs
-
-        with open(path, 'w') as f:
-            json.dump(self.signatures, f)
-
-        self.signatures_file_lock.release()
         return self
+        # """
+        # Write signatures database as json to file
+
+        # :param path: specify path otherwise update the file that was loaded with open()
+        # :param sync: lock signature file, load contents and merge it into memcached sighash db, then save it
+        # :return: self
+        # """
+        # path = path or self.signatures_file
+        # self.signatures_file_lock = self.signatures_file_lock or SimpleFileLock(path)  # lock file to prevent concurrency issues
+        # self.signatures_file_lock.aquire()  # try to aquire it within the next 10s
+
+        # if sync and os.path.exists(path):
+        #     # reload and save if file exists
+        #     with open(path, 'r') as f:
+        #         sigs = json.load(f)
+
+        #     sigs.update(self.signatures)  # reload file and merge cached sigs into what we load from file
+        #     self.signatures = sigs
+
+        # with open(path, 'w') as f:
+        #     json.dump(self.signatures, f)
+
+        # self.signatures_file_lock.release()
+        # return self
 
     def get(self, sighash, timeout=2):
         """
