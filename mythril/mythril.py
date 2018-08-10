@@ -164,20 +164,22 @@ class Mythril(object):
 
     @staticmethod
     def _add_leveldb_option(config, leveldb_fallback_dir):
-        config.set('defaults', "#Default chaindata locations:")
-        config.set('defaults', "#– Mac: ~/Library/Ethereum/geth/chaindata")
-        config.set('defaults', "#– Linux: ~/.ethereum/geth/chaindata")
-        config.set('defaults', "#– Windows: %USERPROFILE%\\AppData\\Roaming\\Ethereum\\geth\\chaindata")
-        config.set('defaults', 'leveldb_dir', leveldb_fallback_dir)
+        pass
+        # config.set('defaults', "#Default chaindata locations:")
+        # config.set('defaults', "#– Mac: ~/Library/Ethereum/geth/chaindata")
+        # config.set('defaults', "#– Linux: ~/.ethereum/geth/chaindata")
+        # config.set('defaults', "#– Windows: %USERPROFILE%\\AppData\\Roaming\\Ethereum\\geth\\chaindata")
+        # config.set('defaults', 'leveldb_dir', leveldb_fallback_dir)
 
     @staticmethod
     def _add_dynamic_loading_option(config):
-        config.set('defaults', '#– To connect to Infura use dynamic_loading: infura')
-        config.set('defaults', '#– To connect to Ipc use dynamic_loading: ipc')
-        config.set('defaults', '#– To connect to Rpc use '
-                               'dynamic_loading: HOST:PORT / ganache / infura-[network_name]')
-        config.set('defaults', '#– To connect to local host use dynamic_loading: localhost')
-        config.set('defaults', 'dynamic_loading', 'infura')
+        pass
+        # config.set('defaults', '#– To connect to Infura use dynamic_loading: infura')
+        # config.set('defaults', '#– To connect to Ipc use dynamic_loading: ipc')
+        # config.set('defaults', '#– To connect to Rpc use '
+        #                        'dynamic_loading: HOST:PORT / ganache / infura-[network_name]')
+        # config.set('defaults', '#– To connect to local host use dynamic_loading: localhost')
+        # config.set('defaults', 'dynamic_loading', 'infura')
 
     def analyze_truffle_project(self, *args, **kwargs):
         return analyze_truffle_project(self.sigs, *args, **kwargs)  # just passthru by passing signatures for now
