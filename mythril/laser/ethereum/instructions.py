@@ -798,7 +798,7 @@ class Instruction:
             return [global_state]
 
         index = util.get_instruction_index(disassembly.instruction_list, jump_addr)
-
+       
         if not index:
             logging.debug("Invalid jump destination: " + str(jump_addr))
             return [global_state]

@@ -45,6 +45,9 @@ class SymExecWrapper:
 
                 instruction = state.get_current_instruction()
 
+                if instruction == None:
+                    continue
+
                 op = instruction['opcode']
 
                 if op in ('CALL', 'CALLCODE', 'DELEGATECALL', 'STATICCALL'):

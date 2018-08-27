@@ -36,6 +36,10 @@ def get_instruction_index(instruction_list, address):
 
         index += 1
 
+    if index >= len(instruction_list):
+        raise Exception ("out of instr index, %s/%s"%(index, len(instruction_list)))
+
+
     return None
 
 

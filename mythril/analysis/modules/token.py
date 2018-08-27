@@ -131,6 +131,10 @@ def execute(statespace):
 
             instruction = state.get_current_instruction()
 
+            if instruction == None:
+                #print(state)
+                continue
+
             if(instruction['opcode'] == "SSTORE"):
                 stack = copy.deepcopy(state.mstate.stack)
                 to = stack.pop()

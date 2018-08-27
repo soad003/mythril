@@ -84,7 +84,11 @@ class LaserEVM:
 
     def execute_state(self, global_state):
         instructions = global_state.environment.code.instruction_list
-        op_code = instructions[global_state.mstate.pc]['opcode']
+        try:
+            op_code = instructions[global_state.mstate.pc]['opcode']
+        except IndexError:
+            self.open_states.append(global_state.world_state)
+            return [], None
 
         # Only count coverage for the main contract
         #if len(global_state.transaction_stack) == 0:
@@ -141,7 +145,11 @@ class LaserEVM:
                 self._new_node_state(state)
         elif opcode == "JUMPI":
             for state in new_states:
-                self._new_node_state(state, JumpType.CONDITIONAL, state.mstate.constraints[-1])
+                if len(state.mstate.constraints) == 0:
+                    constr = None
+                else:
+                    constr = state.mstate.constraints[-1]
+                self._new_node_state(state, JumpType.CONDITIONAL, constr)
         elif opcode in ("CALL", 'CALLCODE', 'DELEGATECALL', 'STATICCALL'):
             assert len(new_states) <= 1
             for state in new_states:

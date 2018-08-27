@@ -170,6 +170,8 @@ class GlobalState:
     def get_current_instruction(self):
         """ Gets the current instruction for this GlobalState"""
         instructions = self.environment.code.instruction_list
+        if self.mstate.pc >= len(instructions):
+            return None
         return instructions[self.mstate.pc]
 
     @property
