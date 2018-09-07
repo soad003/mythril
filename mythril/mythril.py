@@ -376,6 +376,7 @@ class Mythril(object):
                     verbose_report=False, max_depth=None, execution_timeout=None, ):
 
         all_issues = []
+        sym = None
         for contract in (contracts or self.contracts):
             sym = SymExecWrapper(contract, address, strategy,
                                  dynloader=DynLoader(self.eth) if self.dynld else None,
@@ -390,7 +391,7 @@ class Mythril(object):
             all_issues += issues
 
         # Finally, output the results
-        report = Report(verbose_report)
+        report = Report(verbose_report, coverage = sym.laser.coverage)
         for issue in all_issues:
             report.append_issue(issue)
 

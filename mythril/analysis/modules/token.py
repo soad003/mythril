@@ -74,6 +74,10 @@ def check_if_proper_token_semantics(sstors):
                 (_, _, _, input_dep_val_x, input_dep_to_x, _) = x
                 (_, _, _, input_dep_val_y, input_dep_to_y, _) = y
 
+
+                # logging.debug(input_dep_val_x)
+                # logging.debug(input_dep_val_y)
+
                 r = set(map(lambda x: x[1], filter(lambda x: x[0] == "bvsub", input_dep_val_x)))
                 l = set(map(lambda x: x[1], filter(lambda x: x[0] == "bvadd", input_dep_val_y)))
 
@@ -145,6 +149,8 @@ def execute(statespace):
                     #print()
                     #print(to)
                     #print()
+                    # print("FOUND STORE OF VALUE")
+                    # print(val)
                     try:
                         logging.debug("[TOKEN] found matching store")
                         model = solver.get_model(node.constraints, timeout = 600)
@@ -167,6 +173,8 @@ def execute(statespace):
         # # has_add = any(filter(lambda x: x[3], values))
         # # has_sub = any(filter(lambda x: x[4], values))
         # to_dep_on_call = list(filter(lambda x: x[3], values))
+        logging.debug("check if proper")
+        logging.debug(key)
         if check_if_proper_token_semantics(values):
             issues.append(Issue(cont, func, instruction['address'], "Token +/- SSTORE, Coverage: " + str(statespace.laser.coverage), "Warning", str("".join(list(map(gen_description, values)))), str("".join(list(map(gen_debug, values))))))
 
