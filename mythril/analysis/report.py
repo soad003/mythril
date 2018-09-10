@@ -43,9 +43,10 @@ class Issue:
 class Report:
     environment = Environment(loader=PackageLoader('mythril.analysis'), trim_blocks=True)
 
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=False, coverage=None):
         self.issues = {}
         self.verbose = verbose
+        self.coverage = coverage
         pass
 
     def sorted_issues(self):
@@ -63,7 +64,7 @@ class Report:
         return template.render(filename=name, issues=self.sorted_issues(), verbose=self.verbose)
 
     def as_json(self):
-        result = {'success': True, 'error': None, 'issues': self.sorted_issues()}
+        result = {'success': True, 'error': None, 'issues': self.sorted_issues(), 'coverage': self.coverage}
         return json.dumps(result, sort_keys=True)
 
     def as_markdown(self):
