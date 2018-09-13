@@ -6,6 +6,7 @@ from mythril.analysis.ops import *
 from mythril.analysis.report import Issue
 from mythril.exceptions import UnsatError
 from mythril.laser.ethereum.taint_analysis import TaintRunner
+from z3 import Z3Exception
 
 '''
 MODULE DESCRIPTION:
@@ -33,8 +34,8 @@ def execute(statespace):
         following_sstores = _get_sstore_along_the_line(statespace, node)
 
         if len(following_sstores) > 0:
-            # logging.info("Found SSTORE %s following an SSTORE in (%s)"%(len(following_sstores), funtcion_we_are_in))
-            # logging.debug("%s: BEGIN Contraints of first SSTORE"%(funtcion_we_are_in))
+            logging.info("Found SSTORE %s following an SSTORE in (%s)"%(len(following_sstores), funtcion_we_are_in))
+            logging.debug("%s: BEGIN Contraints of first SSTORE"%(funtcion_we_are_in))
 
             r_n_constraints = map(_normalize_constraint, filter(_relevant_constraint, node.constraints))
 
@@ -51,10 +52,10 @@ def execute(statespace):
             else:
                 logging.info("Found no matching sstores")
 
-            # logging.debug("%s: END Contraints, those where the relevant constraints"%(funtcion_we_are_in))
+            logging.debug("%s: END Contraints, those where the relevant constraints"%(funtcion_we_are_in))
 
-            # logging.debug("%s: Leading value =\n%s"%(funtcion_we_are_in, _get_value_sstore(state)))
-            # logging.debug("%s: Following value =\n%s"%(funtcion_we_are_in, _get_value_sstore(following_sstores[0])))
+            logging.debug("%s: Leading value =\n%s"%(funtcion_we_are_in, _get_value_sstore(state)))
+            logging.debug("%s: Following value =\n%s"%(funtcion_we_are_in, _get_value_sstore(following_sstores[0])))
         else: 
             logging.info("%s: FOUND SSTORE (%s), but nothing followed"%(funtcion_we_are_in, _get_value_sstore(state)))
 
@@ -64,11 +65,11 @@ def check_for_token_pattern(sstore_start, following_sstores, relevant_n_constrai
     matches = []
     op_set = set(["bvsub", "bvadd"])
 
-    matching_constraints = check_sstore_value(sstore_start, op_set, relevant_n_constraints)
+    matching_constraints = check_sstore_value(sstore_start, op_set, relevant_n_constraints, False)
 
     for f_sstore in following_sstores:
         for c in matching_constraints:
-            res = check_sstore_value(f_sstore, op_set - set([c["op"]]), [c["constraint"]])
+            res = check_sstore_value(f_sstore, op_set - set([c["op"]]), [c["constraint"]], c["had_constraint_in_index_or_val"])
             if len(res) > 0:
                 matches.append({"store1": sstore_start, "store2": f_sstore, "constraint": c})
 
@@ -76,49 +77,70 @@ def check_for_token_pattern(sstore_start, following_sstores, relevant_n_constrai
 
     # must contain relevant constraint storagevalue as well as plus or minus
 
+def fuzzy_compare_terms(a, b):
+    try:
+        return term_str(a) == "storage_" + term_str(b) or term_str(a) == term_str(b) or a == b
+    except Z3Exception as e:
+        logging.debug("Error Evaluating constraint_in_index")
+        return None
 
-def check_sstore_value(sstore, s_ops, relevant_n_constraints):
+
+
+def check_sstore_value(sstore, s_ops, relevant_n_constraints, had_constraint_in_index_or_val):
     sstore_i, sstore_val = _get_value_sstore(sstore) 
     matches = []
     for constraint in relevant_n_constraints:
 
-        # logging.debug("store")
-        # logging.debug(sstore_val)
-        # logging.debug("constraint")
-        # logging.debug(constraint)
+        logging.debug("store")
+        logging.debug(sstore_val)
+        logging.debug("constraint")
+        logging.debug(constraint)
 
 
-        # logging.debug("T"*70)
-        # logging.debug(term_str(sstore_val))
+        logging.debug("T"*70)
+        logging.debug(term_str(sstore_val))
 
-        # logging.debug("\n=")
-        # logging.debug(term_str(sstore_i))
-        # logging.debug("T"*70)
+        logging.debug("\n=")
+        logging.debug(term_str(sstore_i))
+        logging.debug("T"*70)
 
         if sstore_i == None:
             raise Exception("AHHHLkjfklsajfdljaslfjl")
 
         #storage_in_term = in_term(sstore_val, lambda x: str(x) == str(constraint["gt"]))
         storage_in_term = in_term(sstore_val, lambda x: _contains_storage(x) != None) #already checked that for first store via taint analysis
-        index_self_ref = in_term(sstore_val, lambda x: term_str(x) == "storage_" + term_str(sstore_i))  #check selfref, 
+        index_self_ref = in_term(sstore_val, lambda x: fuzzy_compare_terms(x, sstore_i))  #check selfref, 
+        if not had_constraint_in_index_or_val:
+            constraint_in_index = in_term(sstore_i, lambda x:  fuzzy_compare_terms(x,constraint["gt"]))  #check selfref, 
+            constraint_in_value = in_term(sstore_val, lambda x: fuzzy_compare_terms(x, constraint["gt"]))  #check selfref, 
+        else:
+            constraint_in_index = True
+            constraint_in_value = True
         calldata_in_term = in_term(sstore_val, lambda x: str(x) == str(constraint["lt"]))
         op_in_term = in_term(sstore_val, lambda x: x.decl().name() in s_ops )
 
-        # logging.debug("storage_in_term")
-        # logging.debug(storage_in_term)
+        logging.debug("storage_in_term")
+        logging.debug(storage_in_term)
 
-        # logging.debug("calldata_in_term")
-        # logging.debug(calldata_in_term)
+        logging.debug("calldata_in_term")
+        logging.debug(calldata_in_term)
 
-        # logging.debug("index_self_ref")
-        # logging.debug(index_self_ref)
+        logging.debug("index_self_ref")
+        logging.debug(index_self_ref)
 
-        # logging.debug("op_in_term")
-        # if op_in_term != None:
-        #     logging.debug(op_in_term.decl().name())
+        logging.debug("constraint_in_index")
+        logging.debug(constraint_in_index)
+
+        logging.debug("constraint_in_value")
+        logging.debug(constraint_in_value)
+        
+
+        logging.debug("op_in_term")
+        if op_in_term != None:
+            logging.debug(op_in_term.decl().name())
        
-        if storage_in_term != None and calldata_in_term != None  and op_in_term != None and index_self_ref != None:
-            matches.append({"constraint": constraint, "op": op_in_term.decl().name()})
+        if storage_in_term != None and calldata_in_term != None  and op_in_term != None and (index_self_ref != None or constraint_in_index != None or constraint_in_value != None):
+            matches.append({"constraint": constraint, "op": op_in_term.decl().name(), "had_constraint_in_index_or_val": constraint_in_index != None or constraint_in_value != None})
     
     return matches
 
