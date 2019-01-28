@@ -18,7 +18,7 @@ Requirements, Sender balance check in contraints,
 
 def execute(statespace):
     """ Executes the analysis module"""
-    logging.debug("Executing module: TOKEN2")
+    #logging.debug("Executing module: TOKEN2")
 
     issues = []
     taints = []
@@ -34,42 +34,56 @@ def execute(statespace):
         following_sstores = _get_sstore_along_the_line(statespace, node)
 
         if len(following_sstores) > 0:
-            logging.info("Found SSTORE %s following an SSTORE in (%s)"%(len(following_sstores), funtcion_we_are_in))
-            logging.debug("%s: BEGIN Contraints of first SSTORE"%(funtcion_we_are_in))
+            # logging.debug("SSTORE"*10)
+            # logging.info("Found SSTORE %s following an SSTORE in (%s)"%(len(following_sstores), funtcion_we_are_in))
+            # logging.debug("%s: BEGIN Contraints of first SSTORE"%(funtcion_we_are_in))
 
-            r_n_constraints = map(_normalize_constraint, filter(_relevant_constraint, node.constraints))
+            #print("%s found following stores (%s)"%(funtcion_we_are_in, len(following_sstores)))
+
+            r_n_constraints = list(map(_normalize_constraint, filter(_relevant_constraint, node.constraints)))
 
             # for c in r_n_constraints:
             #     logging.info(c)
 
 
-            matches = check_for_token_pattern(state, following_sstores, r_n_constraints)
+            matches = check_for_token_pattern(state, following_sstores, r_n_constraints, funtcion_we_are_in)
 
             if len(matches) > 0:
                 issues.append(Issue(node.contract_name, node.function_name, None,
                            "Found a transfer like function",
                            "WUPI"))
             else:
-                logging.info("Found no matching sstores")
+                pass
+                #logging.info("Found no matching sstores")
 
-            logging.debug("%s: END Contraints, those where the relevant constraints"%(funtcion_we_are_in))
+            # logging.debug("%s: END Contraints, those where the relevant constraints"%(funtcion_we_are_in))
 
-            logging.debug("%s: Leading value =\n%s"%(funtcion_we_are_in, _get_value_sstore(state)))
-            logging.debug("%s: Following value =\n%s"%(funtcion_we_are_in, _get_value_sstore(following_sstores[0])))
-        else: 
-            logging.info("%s: FOUND SSTORE (%s), but nothing followed"%(funtcion_we_are_in, _get_value_sstore(state)))
+            # logging.debug("%s: Leading value =\n%s"%(funtcion_we_are_in, _get_value_sstore(state)))
+            # logging.debug("%s: Following value =\n%s"%(funtcion_we_are_in, _get_value_sstore(following_sstores[0])))
+            # logging.debug("SSTORE"*10)
+        else:
+            pass 
+            #logging.info("%s: FOUND SSTORE (%s), but nothing followed"%(funtcion_we_are_in, _get_value_sstore(state)))
 
     return issues
 
-def check_for_token_pattern(sstore_start, following_sstores, relevant_n_constraints):
+def check_for_token_pattern(sstore_start, following_sstores, relevant_n_constraints, f_name):
     matches = []
     op_set = set(["bvsub", "bvadd"])
 
-    matching_constraints = check_sstore_value(sstore_start, op_set, relevant_n_constraints, False)
+    matching_constraints = check_sstore_value(sstore_start, op_set, relevant_n_constraints, False, True, f_name)
 
     for f_sstore in following_sstores:
         for c in matching_constraints:
-            res = check_sstore_value(f_sstore, op_set - set([c["op"]]), [c["constraint"]], c["had_constraint_in_index_or_val"])
+            res = check_sstore_value(f_sstore, op_set - set([c["op"]]), [c["constraint"]], c["had_constraint_in_index_or_val"], False, f_name)
+
+            sstore_i, sstore_val = _get_value_sstore(sstore_start) 
+            # print("%s Start          \n%s"%(f_name, sstore_val))
+            # print("%s C              \n%s"%(f_name, c))
+            sstore_i, sstore_val = _get_value_sstore(f_sstore) 
+            # print("%s End            \n%s"%(f_name, sstore_val))
+
+
             if len(res) > 0:
                 matches.append({"store1": sstore_start, "store2": f_sstore, "constraint": c})
 
@@ -81,28 +95,31 @@ def fuzzy_compare_terms(a, b):
     try:
         return term_str(a) == "storage_" + term_str(b) or term_str(a) == term_str(b) or a == b
     except Z3Exception as e:
-        logging.debug("Error Evaluating constraint_in_index")
+        #logging.debug("Error Evaluating constraint_in_index")
         return None
 
 
 
-def check_sstore_value(sstore, s_ops, relevant_n_constraints, had_constraint_in_index_or_val):
+def check_sstore_value(sstore, s_ops, relevant_n_constraints, had_constraint_in_index_or_val, first, f_name):
     sstore_i, sstore_val = _get_value_sstore(sstore) 
     matches = []
+
+    #print("%s CHECKING VALUE with constraints (%s)"%(f_name, len(relevant_n_constraints)))
+
     for constraint in relevant_n_constraints:
+        # logging.debug("BEGIN CHECK SSTORE") 
+        # logging.debug("store")
+        # logging.debug(sstore_val)
+        # logging.debug("constraint")
+        # logging.debug(constraint)
 
-        logging.debug("store")
-        logging.debug(sstore_val)
-        logging.debug("constraint")
-        logging.debug(constraint)
 
+        # logging.debug("T"*70)
+        # logging.debug(term_str(sstore_val))
 
-        logging.debug("T"*70)
-        logging.debug(term_str(sstore_val))
-
-        logging.debug("\n=")
-        logging.debug(term_str(sstore_i))
-        logging.debug("T"*70)
+        # logging.debug("\n=")
+        # logging.debug(term_str(sstore_i))
+        # logging.debug("T"*70)
 
         if sstore_i == None:
             raise Exception("AHHHLkjfklsajfdljaslfjl")
@@ -119,29 +136,29 @@ def check_sstore_value(sstore, s_ops, relevant_n_constraints, had_constraint_in_
         calldata_in_term = in_term(sstore_val, lambda x: str(x) == str(constraint["lt"]))
         op_in_term = in_term(sstore_val, lambda x: x.decl().name() in s_ops )
 
-        logging.debug("storage_in_term")
-        logging.debug(storage_in_term)
+        # logging.debug("storage_in_term")
+        # logging.debug(storage_in_term)
 
-        logging.debug("calldata_in_term")
-        logging.debug(calldata_in_term)
+        # logging.debug("calldata_in_term")
+        # logging.debug(calldata_in_term)
 
-        logging.debug("index_self_ref")
-        logging.debug(index_self_ref)
+        # logging.debug("index_self_ref")
+        # logging.debug(index_self_ref)
 
-        logging.debug("constraint_in_index")
-        logging.debug(constraint_in_index)
+        # logging.debug("constraint_in_index")
+        # logging.debug(constraint_in_index)
 
-        logging.debug("constraint_in_value")
-        logging.debug(constraint_in_value)
+        # logging.debug("constraint_in_value")
+        # logging.debug(constraint_in_value)
         
 
-        logging.debug("op_in_term")
-        if op_in_term != None:
-            logging.debug(op_in_term.decl().name())
+        # # logging.debug("op_in_term")
+        # if op_in_term != None:
+        #     logging.debug(op_in_term.decl().name())
        
         if storage_in_term != None and calldata_in_term != None  and op_in_term != None and (index_self_ref != None or constraint_in_index != None or constraint_in_value != None):
             matches.append({"constraint": constraint, "op": op_in_term.decl().name(), "had_constraint_in_index_or_val": constraint_in_index != None or constraint_in_value != None})
-    
+        #logging.debug("END CHECK SSTORE") 
     return matches
 
 def term_str(term):
@@ -169,6 +186,7 @@ def _relevant_constraint(constraint):
     #logging.info(constraint.decl().name())
     rootOp = constraint.decl().name()
 
+
     if not(rootOp == "bvult" or \
        rootOp == "bvugt" or \
        rootOp == "bvuge" or \
@@ -178,24 +196,32 @@ def _relevant_constraint(constraint):
     lhs = constraint.arg(0)
     rhs = constraint.arg(1)
 
+    #logging.info(constraint)
     # <
     if rootOp == 'bvult':
-        return (_contains_calldata(lhs) and _contains_storage(rhs))
+        return (_contains_calldata(lhs) != None and _contains_storage(rhs) != None )
     # >
     elif rootOp == 'bvugt':
-        return (_contains_calldata(rhs) and _contains_storage(lhs))
+        return (_contains_calldata(rhs) != None and _contains_storage(lhs) != None)
     # >=
     elif rootOp == 'bvuge':
-        return (_contains_calldata(rhs) and _contains_storage(lhs))
+        return (_contains_calldata(rhs) != None and _contains_storage(lhs) != None)
     # <=
     elif rootOp == 'bvule':
-        return (_contains_calldata(lhs) and _contains_storage(rhs))
+        # print("")
+        # print(lhs)
+        # print(_contains_calldata(lhs))
+        # print(rhs)
+        # print(_contains_storage(rhs))
+        return (_contains_calldata(lhs) != None and _contains_storage(rhs) != None)
+    else:
+        raise Exception("This should never happen")
 
     return True
 
 def _normalize_constraint(constraint):
     if not isinstance(constraint, ExprRef):
-        return False
+        raise Exception("ahhhh you are soooo not normal")
 
     #logging.info(constraint.decl().name())
     rootOp = constraint.decl().name()
@@ -302,7 +328,7 @@ def _search_children(statespace, node, constraint=[], index=0, depth=0, max_dept
     :param max_depth: Max depth to explore
     :return: List of states that match the opcodes and are dependent on expression
     """
-    logging.debug("SEARCHING SSTORE used after %d", node.uid)
+    #logging.debug("SEARCHING SSTORE used after %d", node.uid)
 
     results = []
 

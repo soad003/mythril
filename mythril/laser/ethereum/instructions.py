@@ -816,7 +816,7 @@ class Instruction:
 
                 states.append(new_state)
             else:
-                logging.debug("Pruned unreachable states.")
+                logging.debug("True, Pruned unreachable states. at %s"%(state.pc))
 
         # False case
         negated = simplify(Not(condition)) if type(condition) == BoolRef else condition == 0
@@ -827,7 +827,7 @@ class Instruction:
             new_state.mstate.constraints.append(negated if type(negated) == bool else simplify(negated))
             states.append(new_state)
         else:
-            logging.debug("Pruned unreachable states.")
+            logging.debug("False, Pruned unreachable states. at %s"%(state.pc))
 
         return states
 
